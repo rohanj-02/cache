@@ -280,7 +280,7 @@ public class cache{
             for(int i = 0; i < tagArray.size(); i++) {
                 if(!isValidArray.get(i)) {
                     System.out.println("Index Number : " + i);
-                    System.out.println("Empty Set");
+                    System.out.println("Empty");
                 }
                 else{
                     System.out.println("Index Number : " + i);
@@ -510,8 +510,365 @@ public class cache{
     //Fully Associative Cache
 
     static class fullyAssociative{
+        //Global Variables
+        int OFFSET_BITS;
+        int sizeOfTag;
+        int TAG_BITS;
+        int BLOCK_SIZE;
+        int ELEMENTS_IN_TAG = 0;
+        ArrayList<String> tagArray;
+        ArrayList<Block> dataArray;
+        ArrayList<Boolean> isValidArray;
+        ArrayList<BlockMem> mainMemory = new ArrayList<BlockMem>();
+
+        //Functions
+
+        void loadIntoCache(String tagPart, int offsetDecimal, String value){
+            //loads value to cache given set has space
+            System.out.println("Loading into Cache...");
+//            isValidArray.remove(tagArray.size() - 1);
+//            tagArray.remove(tagArray.size() - 1);
+//            dataArray.remove(tagArray.size() - 1);
+            tagArray.add(0, tagPart);
+            dataArray.add(0, new Block(BLOCK_SIZE, offsetDecimal, value, tagPart , OFFSET_BITS));
+            isValidArray.add(0, true);
+            ELEMENTS_IN_TAG ++;
+        }
+
+        void replaceIntoCache(String tagPart, int offsetDecimal, String value){
+
+            Block toBeAdded = new Block(BLOCK_SIZE, offsetDecimal, value, tagPart, OFFSET_BITS);
+            for(int i = 0; i < mainMemory.size(); i++){
+                if(mainMemory.get(i).tagPart.equals(tagPart)){
+                    toBeAdded = mainMemory.get(i).block;
+                    mainMemory.remove(i);
+                }
+            }
+
+            Block blockTemp = dataArray.get(tagArray.size() - 1);
+            String tagTemp = tagArray.get(tagArray.size() - 1);
+            BlockMem temp = new BlockMem(tagTemp, blockTemp);
+            mainMemory.add(temp);
+            String dataToBeReplaced = tagTemp;
+            for(int j = 0; j < 32 - tagTemp.length(); j++){
+                dataToBeReplaced += "0";
+            }
+            System.out.println("Block Memory to be replaced: " + Integer.toString(Integer.parseInt(dataToBeReplaced, 2), 16));
+            tagArray.remove(tagArray.size() - 1);
+            dataArray.remove(dataArray.size() - 1);
+            isValidArray.remove(isValidArray.size() - 1);
+            isValidArray.add(0, true);
+            tagArray.add(0, tagPart);
+            dataArray.add(0, toBeAdded);
+        }
+
+        void readCache(int offsetDecimal, int indexDecimal){
+            System.out.println("Read hit");
+            Block fetchedBlock = dataArray.get(indexDecimal);
+            System.out.println("Data : " + fetchedBlock.data[offsetDecimal].data);
+        }
+
+        void writeCache(int offsetDecimal, int indexDecimal, int index, String value){
+            System.out.println("Write hit");
+            dataArray.get(indexDecimal).data[offsetDecimal].data = value;
+        }
+
+        void lookup(String address, boolean isRead, String value){
+            address = hexToBinary(address);
+            value = makeNBit(value, 8);
+            String tagPart = address.substring(0,TAG_BITS);
+//            String indexPart = address.substring(TAG_BITS - INDEX_BITS, TAG_BITS);
+            String offsetPart = address.substring(TAG_BITS, address.length());
+//        System.out.println("Tag : " + tagPart);
+//        System.out.println("Index : " + indexPart);
+//        System.out.println("Offset : " + offsetPart);
+            int indexDecimal = 0;
+            int offsetDecimal = binaryToDecimal(offsetPart);
+            boolean isHit = false;
+
+            //Iterate over the concerned set and then if equal print the value
+
+//            ArrayList<String> concernedSet = tagArray.get(indexDecimal);
+            for(int i = 0; i < tagArray.size(); i++){
+                if(tagArray.get(i).equals(tagPart)){
+                    isHit = true;
+                    indexDecimal = i;
+                    if(isRead){
+                        readCache(offsetDecimal, indexDecimal);
+                    }
+                    else{
+                        System.out.println("Previous Data : " + dataArray.get(indexDecimal).data[offsetDecimal].data);
+                        writeCache(offsetDecimal, indexDecimal, i, value);
+                        System.out.println("New data : " + value);
+                    }
+                    Block fetchedBlock = dataArray.get(indexDecimal);
+                    //for lru implementation
+                    tagArray.remove(i);
+                    tagArray.add(0, tagPart);
+                    dataArray.remove(i);
+                    dataArray.add(0, fetchedBlock);
+                }
+            }
+
+            if(!isHit && ELEMENTS_IN_TAG < sizeOfTag){
+                if(isRead){
+                    System.out.println("Read Miss");
+                    loadIntoCache(tagPart, offsetDecimal, value); //value = null for read
+                    Block fetchedBlock = dataArray.get(0);
+                    System.out.println("Data : " + fetchedBlock.data[offsetDecimal].data);
+                }
+                else{
+                    System.out.println("Write Miss");
+                    loadIntoCache(tagPart, offsetDecimal, value);
+                    dataArray.get(0).data[offsetDecimal].data = value;
+                    System.out.println("Data written at " + Integer.toString(Integer.parseInt(address,2),16)); //Converting binary address to hexadecimal address
+                }
+            }
+
+            else if(!isHit && ELEMENTS_IN_TAG >= sizeOfTag){
+                if(isRead){
+                    System.out.println("Read Miss");
+                    System.out.println("Replacing...");
+                    replaceIntoCache(tagPart, offsetDecimal, value);
+                    Block fetchedBlock = dataArray.get(0);
+                    System.out.println("Data : " + fetchedBlock.data[offsetDecimal].data);
+                }
+                else{
+                    System.out.println("Write Miss");
+                    System.out.println("Replacing...");
+                    replaceIntoCache(tagPart, offsetDecimal, value);
+                    dataArray.get(0).data[offsetDecimal].data = value;
+                    System.out.println("Data written at " + Integer.toString(Integer.parseInt(address,2),16)); //Converting binary address to hexadecimal address
+                }
+            }
+        }
+
+        void printCache(){
+            for(int i = 0; i < tagArray.size(); i++) {
+                if(!isValidArray.get(i)) {
+                    System.out.println("Index Number : " + i);
+                    System.out.println("Empty");
+                }
+                else{
+                    System.out.println("Index Number : " + i);
+                    String t = tagArray.get(i);
+                    for (int k = 0; k < OFFSET_BITS; k++) {
+                        t += "0";
+                    }
+                    System.out.println("Block Address : " + Integer.toString(Integer.parseInt(t, 2), 16));
+                    dataArray.get(i).printBlock(BLOCK_SIZE);
+                }
+            }
+        }
+
+        void printMainMemory(){
+            for(int i = 0; i < mainMemory.size(); i++){
+                System.out.println("Tag : " + mainMemory.get(i).tagPart);
+                mainMemory.get(i).block.printBlock(BLOCK_SIZE);
+            }
+        }
+
         void fullyRunner(Scanner s){
-            System.out.println("Not implemented");
+            //INPUT
+            int cacheSizeInKB = 0;
+            int cacheLine = 0;
+            BLOCK_SIZE = 0;
+            boolean flag = false;
+            //INPUT SIZE OF CACHE
+            do{
+                try{
+                    System.out.println("Enter size of cache in KB : ");
+                    cacheSizeInKB = s.nextInt();
+                    flag = !isPowerOfTwo(cacheSizeInKB);
+                    if(flag){
+                        System.out.println("Error : Cache Size should be a power of two.");
+                    }
+                    else{
+                        flag = false;
+                    }
+                }
+                catch(InputMismatchException e) {
+                    System.out.println("Error : " + e);
+                    s.nextLine();
+                    flag = true;
+                }
+            }while(flag);
+            //INPUT CACHE LINES
+            do{
+                try{
+                    System.out.println("Enter number of cache lines : ");
+                    cacheLine = s.nextInt();
+                    flag = !isPowerOfTwo(cacheLine);
+                    if(flag){
+                        System.out.println("Error : Cache Lines should be a power of two.");
+                    }
+                    else{
+                        flag = false;
+                    }
+                }
+                catch(InputMismatchException e) {
+                    System.out.println("Error : " + e);
+                    s.nextLine();
+                    flag = true;
+                }
+            }while(flag);
+            //INPUT SIZE OF BLOCK
+            do{
+                try{
+                    System.out.println("Enter size of block in Bytes : ");
+                    BLOCK_SIZE = s.nextInt();
+                    flag = !isPowerOfTwo(BLOCK_SIZE);
+
+                    if(flag){
+                        System.out.println("Error : Block Size should be a power of two.");
+                    }
+                    else if(cacheSizeInKB * Math.pow(2, 10)/cacheLine != BLOCK_SIZE){
+                        System.out.println("Error : Block Size should be cache size divided by cache line");
+                        flag = true;
+                    }
+                    else if(cacheSizeInKB * Math.pow(2,10) < BLOCK_SIZE){
+                        System.out.println("Error : Block Size cannot be greater than cache size");
+                        flag = true;
+                    }
+                    else{
+                        flag = false;
+                    }
+                }
+                catch(InputMismatchException e) {
+                    System.out.println("Error : " + e);
+                    s.nextLine();
+                    flag = true;
+                }
+            }while(flag);
+
+            //FOR CUSTOM TEST CASE
+//            int cacheSizeInKB = 8;
+//            BLOCK_SIZE = 64;
+//            NO_OF_ELEMENTS_IN_SET = 4;
+
+            OFFSET_BITS = (int)log2(BLOCK_SIZE);
+            TAG_BITS = WORD_LENGTH - OFFSET_BITS;
+            sizeOfTag = cacheLine;
+            tagArray = new ArrayList<String>();
+            dataArray = new ArrayList<Block>();
+            isValidArray = new ArrayList<Boolean>();
+
+            for(int i = 0; i < sizeOfTag; i++){
+//                tagArray.add("");
+//                dataArray.add(new Block(BLOCK_SIZE));
+//                isValidArray.add(false);
+            }
+
+            //FOR CUSTOM TEST CASE
+            lookup("1000", false, "0101");
+            lookup("2000", false, "0001");
+            lookup("3000", false, "1001");
+            lookup("4000", false, "1101");
+
+            flag = false;
+            //ACTUAL RUNNER
+            do{
+                try{
+                    System.out.println("Enter the function that you want to perform(read, write, print, exit) : ");
+                    String mode = s.next();
+                    mode = mode.trim();
+                    mode = mode.toLowerCase();
+                    flag = true;
+                    //READ MODE
+                    if(mode.equals("read")){
+                        boolean insideFlag = false;
+                        do{
+                            try{
+                                System.out.println("Enter address in hexadecimal : ");
+                                String h = s.next();
+                                if(h.substring(0,2).equals("0x") || h.substring(0,2).equals("0X")){
+                                    h = h.substring(2);
+                                }
+                                if(h.length() > 8){
+                                    System.out.println("Error : The address should be 32 bit. ");
+                                    insideFlag = true;
+                                }
+                                else if(!isHex(h)){
+                                    System.out.println("Error : Address is not in hexadecimal format!");
+                                    insideFlag = true;
+                                }
+                                else{
+                                    lookup(h, true, "NULLNULL");
+                                    insideFlag = false;
+                                }
+                            }
+                            catch(InputMismatchException e){
+                                System.out.println("Error : " + e);
+                                insideFlag = true;
+                                s.nextLine();
+                            }
+                        }while(insideFlag);
+                    }
+                    //WRITE MODE
+                    else if(mode.equals("write")){
+                        boolean insideFlag = false;
+                        do{
+                            try{
+                                System.out.println("Enter address in hexadecimal and data in Binary: ");
+                                String h = s.next();
+                                String data = s.next();
+                                //HEXADECIMAL VALIDATION
+                                if(h.substring(0,2).equals("0x") || h.substring(0,2).equals("0X")){
+                                    h = h.substring(2);
+                                }
+                                if(h.length() > 8){
+                                    System.out.println("Error : The address should be 32 bit. ");
+                                    insideFlag = true;
+                                }
+                                else if(!isHex(h)){
+                                    System.out.println("Error : Address should be in hexadecimal format!");
+                                    insideFlag = true;
+                                }
+                                //DATA VALIDATION
+                                else if(data.length() > 8){
+                                    System.out.println("Error : Data cannot be more than 8 bits.");
+                                    insideFlag = true;
+                                }
+                                else if(!isBinary(data)){
+                                    System.out.println("Error : Data should be in binary format.");
+                                    insideFlag = true;
+                                }
+                                else{
+                                    lookup(h, false, data);
+                                    insideFlag = false;
+                                }
+                            }
+                            catch(InputMismatchException e){
+                                System.out.println("Error : " + e);
+                                insideFlag = true;
+                                s.nextLine();
+                            }
+                        }while(insideFlag);
+                    }
+                    //PRINT MODE
+                    else if(mode.equals("print")){
+                        printCache();
+                    }
+                    //EXIT
+                    else if(mode.equals("exit")){
+                        flag = false;
+                    }
+                    //MAIN MEMORY
+                    else if(mode.equals("main")){
+                        printMainMemory();
+                    }
+                    //INVALID
+                    else{
+                        System.out.println("Error : Invalid Input.");
+                        flag = true;
+                    }
+                }
+                catch(InputMismatchException e){
+                    System.out.println("Error : " + e);
+                    s.nextLine();
+                    flag = true;
+                }
+            }while(flag);
         }
     }
 
