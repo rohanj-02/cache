@@ -1,9 +1,50 @@
+import java.util.InputMismatchException;
 import java.util.Scanner;
 import java.util.ArrayList;
 
 public class cache{
 
     static int WORD_LENGTH = 32;
+
+    //Validation functions
+
+    static boolean isBinary(String s){
+        for(int i = 0; i < s.length(); i++){
+            char c = s.charAt(i);
+            if( !(c == '0' || c == '1')){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static boolean isHex(String s){
+        char[] chars = {
+                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+        };
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': case 'a':
+                case 'b': case 'c': case 'd': case 'e': case 'f': case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+                    return true;
+                default:
+                    return false;
+            }
+        }
+        return false;
+    }
+
+    static boolean isPowerOfTwo(int s){
+        if(s == 0){
+            return false;
+        }
+        double v = Math.log(s) / Math.log(2);
+        return (int)(Math.ceil(v)) == (int)(Math.floor(v));
+    }
+
+    //Conversion Functions
 
     static String hexToBinary(String hex) {
         int i = Integer.parseInt(hex, 16);
@@ -37,6 +78,8 @@ public class cache{
     static int binaryToDecimal(String x){
         return Integer.parseInt(x, 2);
     }
+
+    //Custom Classes
 
     static class Memory{
         String address; //full address in binary
@@ -109,9 +152,13 @@ public class cache{
 
     }
 
+    //Direct Mapping
+
     static class directMapped{
 
     }
+
+    //N-Way Set Associative Cache
 
     static class nWayAssociative{
         //Global Variables
@@ -253,18 +300,100 @@ public class cache{
 
         void nWayRunner(Scanner s){
             //INPUT
-//        System.out.println("Enter size of cache in KB : ");
-//        int cacheSizeInKB = s.nextInt();
-//        System.out.println("Enter number of cache lines : ");
-//        int cacheLine = s.nextInt();
-//        System.out.println("Enter size of block in Bytes: ");
-//        BLOCK_SIZE = s.nextInt();
-//        System.out.println("Enter n for n-way set associative cache: ");
-//        NO_OF_ELEMENTS_IN_SET = s.nextInt();
+            int cacheSizeInKB = 0;
+            int cacheLine = 0;
+            BLOCK_SIZE = 0;
+            boolean flag = false;
+            //INPUT SIZE OF CACHE
+            do{
+                try{
+                    System.out.println("Enter size of cache in KB : ");
+                    cacheSizeInKB = s.nextInt();
+                    flag = !isPowerOfTwo(cacheSizeInKB);
+                    if(flag){
+                        System.out.println("Error : Cache Size should be a power of two.");
+                    }
+                    else{
+                        flag = false;
+                    }
+                }
+                catch(InputMismatchException e) {
+                    System.out.println("Error : " + e);
+                    s.nextLine();
+                    flag = true;
+                }
+            }while(flag);
+            //INPUT CACHE LINES
+            do{
+                try{
+                    System.out.println("Enter number of cache lines : ");
+                    cacheLine = s.nextInt();
+                    flag = !isPowerOfTwo(cacheLine);
+                    if(flag){
+                        System.out.println("Error : Cache Lines should be a power of two.");
+                    }
+                    else{
+                        flag = false;
+                    }
+                }
+                catch(InputMismatchException e) {
+                    System.out.println("Error : " + e);
+                    s.nextLine();
+                    flag = true;
+                }
+            }while(flag);
+            //INPUT SIZE OF BLOCK
+            do{
+                try{
+                    System.out.println("Enter size of block in Bytes : ");
+                    BLOCK_SIZE = s.nextInt();
+                    flag = !isPowerOfTwo(BLOCK_SIZE);
 
-            int cacheSizeInKB = 8;
-            BLOCK_SIZE = 64;
-            NO_OF_ELEMENTS_IN_SET = 4;
+                    if(flag){
+                        System.out.println("Error : Block Size should be a power of two.");
+                    }
+                    else if(cacheSizeInKB * Math.pow(2, 10)/cacheLine != BLOCK_SIZE){
+                        System.out.println("Error : Block Size should be cache size divided by cache line");
+                        flag = true;
+                    }
+                    else if(cacheSizeInKB * Math.pow(2,10) < BLOCK_SIZE){
+                        System.out.println("Error : Block Size cannot be greater than cache size");
+                        flag = true;
+                    }
+                    else{
+                        flag = false;
+                    }
+                }
+                catch(InputMismatchException e) {
+                    System.out.println("Error : " + e);
+                    s.nextLine();
+                    flag = true;
+                }
+            }while(flag);
+            //INPUT N_WAY
+            do{
+                try{
+                    System.out.println("Enter n for n-way set associative cache : ");
+                    NO_OF_ELEMENTS_IN_SET = s.nextInt();
+                    flag = !isPowerOfTwo(NO_OF_ELEMENTS_IN_SET);
+                    if(flag){
+                        System.out.println("Error : Number of elements in a set should be a power of two.");
+                    }
+                    else{
+                        flag = false;
+                    }
+                }
+                catch(InputMismatchException e) {
+                    System.out.println("Error : " + e);
+                    s.nextLine();
+                    flag = true;
+                }
+            }while(flag);
+
+            //FOR CUSTOM TEST CASE
+//            int cacheSizeInKB = 8;
+//            BLOCK_SIZE = 64;
+//            NO_OF_ELEMENTS_IN_SET = 4;
 
             OFFSET_BITS = (int)log2(BLOCK_SIZE);
             TAG_BITS = WORD_LENGTH - OFFSET_BITS;
@@ -279,38 +408,114 @@ public class cache{
                 dataArray.add(new ArrayList<Block>());
             }
 
-            int mode = 1;
+            //FOR CUSTOM TEST CASE
+//            lookup("1000", false, "0101");
+//            lookup("2000", false, "0001");
+//            lookup("3000", false, "1001");
+//            lookup("4000", false, "1101");
 
-            lookup("1000", false, "0101");
-            lookup("2000", false, "0001");
-            lookup("3000", false, "1001");
-            lookup("4000", false, "1101");
-
-
-            while(mode == 1 || mode == 2 || mode == 3 || mode == 4){
-                System.out.println("Enter 1 for Reading, 2 for writing and 3 for seeing the cache : ");
-                mode = s.nextInt();
-                switch(mode){
-                    case 1:
-                        System.out.println("Enter address in hexadecimal : ");
-                        lookup(s.next(), true, "NULLNULL");
-                        break;
-                    case 2:
-                        System.out.println("Enter address(hexadecimal) and value(binary) to store : ");
-                        String add = s.next();
-                        String data = s.next();
-                        lookup(add, false, data);
-                        break;
-                    case 3:
+            flag = false;
+            //ACTUAL RUNNER
+            do{
+                try{
+                    System.out.println("Enter the function that you want to perform(read, write, print, exit) : ");
+                    String mode = s.next();
+                    mode = mode.trim();
+                    mode = mode.toLowerCase();
+                    flag = true;
+                    //READ MODE
+                    if(mode.equals("read")){
+                        boolean insideFlag = false;
+                        do{
+                            try{
+                                System.out.println("Enter address in hexadecimal : ");
+                                String h = s.next();
+                                if(h.substring(0,2).equals("0x") || h.substring(0,2).equals("0X")){
+                                    h = h.substring(2);
+                                }
+                                if(h.length() > 8){
+                                    System.out.println("Error : The address should be 32 bit. ");
+                                    insideFlag = true;
+                                }
+                                else if(!isHex(h)){
+                                    System.out.println("Error : Address is not in hexadecimal format!");
+                                    insideFlag = true;
+                                }
+                                else{
+                                    lookup(h, true, "NULLNULL");
+                                    insideFlag = false;
+                                }
+                            }
+                            catch(InputMismatchException e){
+                                System.out.println("Error : " + e);
+                                insideFlag = true;
+                                s.nextLine();
+                            }
+                        }while(insideFlag);
+                    }
+                    //WRITE MODE
+                    else if(mode.equals("write")){
+                        boolean insideFlag = false;
+                        do{
+                            try{
+                                System.out.println("Enter address in hexadecimal and data in Binary: ");
+                                String h = s.next();
+                                String data = s.next();
+                                //HEXADECIMAL VALIDATION
+                                if(h.substring(0,2).equals("0x") || h.substring(0,2).equals("0X")){
+                                    h = h.substring(2);
+                                }
+                                if(h.length() > 8){
+                                    System.out.println("Error : The address should be 32 bit. ");
+                                    insideFlag = true;
+                                }
+                                else if(!isHex(h)){
+                                    System.out.println("Error : Address should be in hexadecimal format!");
+                                    insideFlag = true;
+                                }
+                                //DATA VALIDATION
+                                else if(data.length() > 8){
+                                    System.out.println("Error : Data cannot be more than 8 bits.");
+                                    insideFlag = true;
+                                }
+                                else if(!isBinary(data)){
+                                    System.out.println("Error : Data should be in binary format.");
+                                    insideFlag = true;
+                                }
+                                else{
+                                    lookup(h, false, data);
+                                    insideFlag = false;
+                                }
+                            }
+                            catch(InputMismatchException e){
+                                System.out.println("Error : " + e);
+                                insideFlag = true;
+                                s.nextLine();
+                            }
+                        }while(insideFlag);
+                    }
+                    //PRINT MODE
+                    else if(mode.equals("print")){
                         printCache();
-                        break;
-                    case 4:
-                        printMainMemory();
-                        break;
+                    }
+                    //EXIT
+                    else if(mode.equals("exit")){
+                        flag = false;
+                    }
+                    //INVALID
+                    else{
+                        System.out.println("Error : Invalid Input.");
+                        flag = true;
+                    }
                 }
-            }
-        }
+                catch(InputMismatchException e){
+                    System.out.println("Error : " + e);
+                    s.nextLine();
+                    flag = true;
+                }
 
+            }while(flag);
+        }
     }
 
     public static void main(String[] args) {
