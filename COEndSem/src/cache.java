@@ -395,10 +395,10 @@ public class cache{
             }
 
             //FOR CUSTOM TEST CASE
-            lookup("1000", false, "0101");
-            lookup("2000", false, "0001");
-            lookup("3000", false, "1001");
-            lookup("4000", false, "1101");
+//            lookup("1000", false, "0101");
+//            lookup("2000", false, "0001");
+//            lookup("3000", false, "1001");
+//            lookup("4000", false, "1101");
 
             flag = false;
             //ACTUAL RUNNER
@@ -568,7 +568,7 @@ public class cache{
             System.out.println("Data : " + fetchedBlock.data[offsetDecimal].data);
         }
 
-        void writeCache(int offsetDecimal, int indexDecimal, int index, String value){
+        void writeCache(int offsetDecimal, int indexDecimal, String value){
             System.out.println("Write hit");
             dataArray.get(indexDecimal).data[offsetDecimal].data = value;
         }
@@ -598,7 +598,7 @@ public class cache{
                     }
                     else{
                         System.out.println("Previous Data : " + dataArray.get(indexDecimal).data[offsetDecimal].data);
-                        writeCache(offsetDecimal, indexDecimal, i, value);
+                        writeCache(offsetDecimal, indexDecimal, value);
                         System.out.println("New data : " + value);
                     }
                     Block fetchedBlock = dataArray.get(indexDecimal);
@@ -760,10 +760,10 @@ public class cache{
             }
 
             //FOR CUSTOM TEST CASE
-            lookup("1000", false, "0101");
-            lookup("2000", false, "0001");
-            lookup("3000", false, "1001");
-            lookup("4000", false, "1101");
+//            lookup("1000", false, "0101");
+//            lookup("2000", false, "0001");
+//            lookup("3000", false, "1001");
+//            lookup("4000", false, "1101");
 
             flag = false;
             //ACTUAL RUNNER
@@ -1135,10 +1135,10 @@ public class cache{
             }
 
             //FOR CUSTOM TEST CASE
-            lookup("1000", false, "0101");
-            lookup("2000", false, "0001");
-            lookup("3000", false, "1001");
-            lookup("4000", false, "1101");
+//            lookup("1000", false, "0101");
+//            lookup("2000", false, "0001");
+//            lookup("3000", false, "1001");
+//            lookup("4000", false, "1101");
 
             flag = false;
             //ACTUAL RUNNER
