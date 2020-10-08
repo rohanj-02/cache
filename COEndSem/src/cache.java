@@ -1,3 +1,4 @@
+
 import java.util.InputMismatchException;
 import java.util.Scanner;
 import java.util.ArrayList;
@@ -19,19 +20,11 @@ public class cache{
     }
 
     static boolean isHex(String s){
-        char[] chars = {
-                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
-                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
-        };
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
-            switch (c) {
-                case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': case 'a':
-                case 'b': case 'c': case 'd': case 'e': case 'f': case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
-                    return true;
-                default:
-                    return false;
-            }
+	    if ((Math.abs(c - '0') < 10 ) || (Math.abs(c - 'A') < 6) || (Math.abs(c - 'a') < 6)) 
+		return true;
+	    
         }
         return false;
     }
@@ -577,18 +570,13 @@ public class cache{
             address = hexToBinary(address);
             value = makeNBit(value, 8);
             String tagPart = address.substring(0,TAG_BITS);
-//            String indexPart = address.substring(TAG_BITS - INDEX_BITS, TAG_BITS);
             String offsetPart = address.substring(TAG_BITS, address.length());
-//        System.out.println("Tag : " + tagPart);
-//        System.out.println("Index : " + indexPart);
-//        System.out.println("Offset : " + offsetPart);
             int indexDecimal = 0;
             int offsetDecimal = binaryToDecimal(offsetPart);
             boolean isHit = false;
 
             //Iterate over the concerned set and then if equal print the value
 
-//            ArrayList<String> concernedSet = tagArray.get(indexDecimal);
             for(int i = 0; i < tagArray.size(); i++){
                 if(tagArray.get(i).equals(tagPart)){
                     isHit = true;
@@ -752,13 +740,7 @@ public class cache{
             tagArray = new ArrayList<String>();
             dataArray = new ArrayList<Block>();
             isValidArray = new ArrayList<Boolean>();
-
-            for(int i = 0; i < sizeOfTag; i++){
-//                tagArray.add("");
-//                dataArray.add(new Block(BLOCK_SIZE));
-//                isValidArray.add(false);
-            }
-
+	    
             //FOR CUSTOM TEST CASE
 //            lookup("1000", false, "0101");
 //            lookup("2000", false, "0001");
